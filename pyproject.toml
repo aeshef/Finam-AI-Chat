@@ -1,0 +1,81 @@
+[tool.poetry]
+name = "finam-x-hse-trade-ai-hack-trader"
+version = "0.1.0"
+description = "Trader AI Assistant over Finam TradeAPI"
+authors = ["Maxim Kirilyuk <werserk@inbox.ru>"]
+readme = "README.md"
+packages = [{ include = "app", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+pydantic = "^2.11.9"
+requests = "^2.32.5"
+python-dotenv = "^1.1.1"
+click = "^8.1.7"
+tqdm = "^4.67.1"
+streamlit = "^1.40.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
+httpx = "^0.28.1"
+black = "^25.9.0"
+ruff = "^0.13.3"
+types-requests = "^2.32.0"
+
+[tool.poetry.scripts]
+validate-submission = "scripts.validate_submission:main"
+generate-submission = "scripts.generate_submission:main"
+calculate-metrics = "scripts.calculate_metrics:main"
+evaluate = "scripts.evaluate:evaluate"
+chat-cli = "src.app.interfaces.chat_cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+preview = true
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle: Enforces PEP 8 style errors
+    "F",   # pyflakes: Detects undefined or unused variables
+    "W",   # pycodestyle: Additional style warnings
+    "I",   # isort: Ensures imports are properly sorted
+    "UP",  # pyupgrade: Modernizes code to use newer Python features
+    "B",   # flake8-bugbear: Highlights common bugs and bad practices
+    "C4",  # flake8-comprehensions: Suggests improvements for comprehensions
+    "SIM", # flake8-simplify: Simplifies complex expressions
+    "Q",   # flake8-quotes: Enforces consistent usage of quotes
+    "RET", # flake8-return: Ensures return statements are consistent
+    "ARG", # flake8-unused-arguments: Warns about unused function arguments
+    "TCH", # flake8-type-checking: Improves type-checking practices
+    "ANN", # flake8-annotations: Encourages the use of type annotations
+    "RUF", # Ruff-specific rules: Adds optimizations specific to Ruff
+    "C90", # McCabe complexity checker
+]
+ignore = [
+    "CPY001", # Ignore annotations for self
+    "RUF001", # String contains ambiguous unicode characters (Cyrillic)
+    "RUF002", # Docstring contains ambiguous unicode characters (Cyrillic)
+    "RUF003", # Comment contains ambiguous unicode characters (Cyrillic)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*" = ["ARG001", "ARG002"]
+"scripts/**/*" = ["ANN"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"

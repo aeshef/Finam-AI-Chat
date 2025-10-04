@@ -1,0 +1,43 @@
+strategies:
+- name: crossover_fast_slow
+  symbol: SBER@MISX
+  timeframe: TIME_FRAME_D
+  start: 2025-01-01
+  end: 2025-09-30
+  entry:
+    type: crossover
+    params:
+      fast: 12
+      slow: 26
+  exit:
+    type: threshold
+    params:
+      ref: 0
+- name: breakout_simple
+  symbol: GAZP@MISX
+  timeframe: TIME_FRAME_D
+  start: 2025-01-01
+  end: 2025-09-30
+  entry:
+    type: threshold
+    params:
+      ref: 200
+  exit:
+    type: threshold
+    params:
+      ref: 180
+- name: 'SBER@MISX_TIME_FRAME_D_Ecrossover-{''fast'': 12, ''slow'': 26}_Xthreshold-{''ref'':
+    0.0}'
+  symbol: SBER@MISX
+  timeframe: TIME_FRAME_D
+  start: последние 180 дней
+  end: сегодня
+  entry:
+    type: crossover
+    params:
+      fast: 12
+      slow: 26
+  exit:
+    type: threshold
+    params:
+      ref: 0.0

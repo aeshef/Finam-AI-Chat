@@ -1,0 +1,39 @@
+# Cron fields: minute hour day month day_of_week
+jobs:
+  - cron: "*/2 * * * *"  # every 2 minutes
+    rule:
+      kind: price_move
+      symbol: SBER@MISX
+      pct: 1.0
+
+  - cron: "*/5 * * * *"
+    rule:
+      kind: transactions
+      account_id: ACC-001-A
+
+  - cron: "*/10 * * * *"
+    rule:
+      kind: risk
+      account_id: ACC-001-A
+
+  - cron: "*/3 * * * *"
+    rule:
+      kind: portfolio_drawdown
+      account_id: ACC-001-A
+      threshold_pct: 2.5
+      suppression_minutes: 30
+      cooldown_minutes: 10
+      channels: ["telegram"]
+      deeplink: "{UI_BASE_URL}?tab=portfolio&account_id={account_id}"
+
+  - cron: "*/4 * * * *"
+    rule:
+      kind: margin_usage
+      account_id: ACC-001-A
+      threshold_pct: 60
+      suppression_minutes: 30
+      cooldown_minutes: 5
+      channels: ["telegram"]
+      deeplink: "{UI_BASE_URL}?tab=account&account_id={account_id}"
+
+

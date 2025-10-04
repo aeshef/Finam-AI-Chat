@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+
+# Environments
+.venv/
+venv/
+.env
+.env.*
+*.env
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs and reports
+logs/
+*.log
+reports/
+
+# Notebooks outputs
+.ipynb_checkpoints/
+
+# Data artifacts (keep processed CSVs; ignore heavy/interim/raw by default)
+data/raw/
+data/interim/
+!data/processed/*.csv
+
+# Secrets/configs
+auth.json
+configs/telegram_chats.json
+configs/REST API.postman_collection.json
+
+# Build/cache
+build/
+dist/
+.cache/
+.mypy_cache/
+.pytest_cache/
+
+# Local docs and Solution (exclude from public repo)
+/Users/aeshef/Desktop/FINAM/Solution/
+
+# Tests (temporarily exclude)
+tests/

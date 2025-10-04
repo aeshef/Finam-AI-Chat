@@ -1,0 +1,176 @@
+# Declarative registry of API endpoints (Single Source of Truth)
+# Each item binds a Pydantic schema name to METHOD/PATH template and query/body param mapping.
+# Placeholders in path/params use {field} for required, and {field?} for optional fields.
+
+endpoints:
+  - schema: QuoteRequest
+    intent: quote
+    synonyms: ["котировка", "цена", "quote", "последняя цена"]
+    keywords: ["котиров", "цен"]
+    method: GET
+    path: /v1/instruments/{symbol}/quotes/latest
+    slot_types:
+      symbol: instrument
+
+  - schema: OrderbookRequest
+    intent: orderbook
+    synonyms: ["стакан", "orderbook", "биржевой стакан"]
+    keywords: ["стакан"]
+    method: GET
+    path: /v1/instruments/{symbol}/orderbook
+    params:
+      depth: "{depth?}"
+    slot_types:
+      symbol: instrument
+      depth: int
+
+  - schema: BarsRequest
+    intent: bars
+    synonyms: ["свечи", "bars", "история"]
+    keywords: ["свеч", "истор"]
+    method: GET
+    path: /v1/instruments/{symbol}/bars
+    params:
+      timeframe: "{timeframe}"
+      interval.start_time: "{start?}"
+      interval.end_time: "{end?}"
+    slot_types:
+      symbol: instrument
+      timeframe: timeframe
+      start: datetime
+      end: datetime
+
+  - schema: TradesLatestRequest
+    intent: trades_latest
+    synonyms: ["лента", "trades", "последние сделки"]
+    keywords: ["сделк", "лента"]
+    method: GET
+    path: /v1/instruments/{symbol}/trades/latest
+    slot_types:
+      symbol: instrument
+
+  - schema: AccountRequest
+    intent: account
+    synonyms: ["счет", "account"]
+    keywords: ["счет", "позици", "баланс", "портфель"]
+    method: GET
+    path: /v1/accounts/{account_id}
+    slot_types:
+      account_id: string
+
+  - schema: OrdersListRequest
+    intent: orders_list
+    synonyms: ["ордера", "orders", "заявки"]
+    keywords: ["ордер", "заявк", "активн"]
+    method: GET
+    path: /v1/accounts/{account_id}/orders
+    slot_types:
+      account_id: string
+
+  - schema: OrderGetRequest
+    intent: order_get
+    synonyms: ["детали ордера", "детали заявки", "информация об ордере", "order", "order get", "заявка"]
+    keywords: ["детал", "ордер", "заявк"]
+    method: GET
+    path: /v1/accounts/{account_id}/orders/{order_id}
+
+  - schema: TradesRequest
+    intent: trades
+    synonyms: ["сделки", "история сделок", "trades", "отчет по сделкам", "лента сделок"]
+    keywords: ["сделк", "истор", "отчет"]
+    method: GET
+    path: /v1/accounts/{account_id}/trades
+    params:
+      interval.start_time: "{start?}"
+      interval.end_time: "{end?}"
+
+  - schema: TransactionsRequest
+    intent: transactions
+    synonyms: ["транзакции", "пополнения", "списания", "движение средств", "dividends", "комиссии"]
+    keywords: ["транзакц", "пополн", "списан", "дивиден", "штраф", "пени"]
+    method: GET
+    path: /v1/accounts/{account_id}/transactions
+    params:
+      interval.start_time: "{start?}"
+      interval.end_time: "{end?}"
+      limit: "{limit?}"
+
+  - schema: SessionDetailsRequest
+    method: POST
+    path: /v1/sessions/details
+
+  - schema: SessionCreateRequest
+    method: POST
+    path: /v1/sessions
+
+  - schema: SystemTimeRequest
+    method: GET
+    path: /v1/system/time
+
+  - schema: OrderCreateRequest
+    method: POST
+    path: /v1/accounts/{account_id}/orders
+    json_from: order
+
+  - schema: OrderCancelRequest
+    intent: order_cancel
+    synonyms: ["отменить ордер", "удали заявку", "отозвать ордер", "cancel order", "отмена заявки", "срочно отменить", "отмени заявку"]
+    keywords: ["отмен", "удал", "отозв", "заявк"]
+    method: DELETE
+    path: /v1/accounts/{account_id}/orders/{order_id}
+
+  # Assets/exchanges family
+  - schema: AssetsListRequest
+    intent: assets_list
+    synonyms: ["инструменты", "все инструменты", "перечень инструментов", "assets", "торговые инструменты"]
+    keywords: ["инструмент", "перечен", "торговать"]
+    method: GET
+    path: /v1/assets
+
+  - schema: AssetInfoRequest
+    intent: asset_info
+    synonyms: ["информация по инструменту", "данные по инструменту", "тикер", "описание", "asset info", "лот", "шаг цены"]
+    keywords: ["информац", "данн", "тикер", "isin", "лот", "шаг цен"]
+    method: GET
+    path: /v1/assets/{symbol}
+    slot_types:
+      symbol: instrument
+
+  - schema: AssetParamsRequest
+    intent: asset_params
+    synonyms: ["параметры инструмента", "params", "ставка риска", "ГО", "гарантийное обеспечение"]
+    keywords: ["параметр", "шаг цен", "лот", "ставка риск", "го", "гарантий"]
+    method: GET
+    path: /v1/assets/{symbol}/params
+    params:
+      account_id: "{account_id?}"
+    slot_types:
+      symbol: instrument
+      account_id: string
+
+  - schema: AssetScheduleRequest
+    intent: asset_schedule
+    synonyms: ["расписание торгов", "когда торги", "клиринг", "schedule"]
+    keywords: ["расписан", "клиринг", "начина", "закрыва", "вечер"]
+    method: GET
+    path: /v1/assets/{symbol}/schedule
+    slot_types:
+      symbol: instrument
+
+  - schema: AssetOptionsRequest
+    intent: asset_options
+    synonyms: ["опционы", "цепочка опционов", "options"]
+    keywords: ["опцион"]
+    method: GET
+    path: /v1/assets/{symbol}/options
+    slot_types:
+      symbol: instrument
+
+  - schema: ExchangesListRequest
+    intent: exchanges_list
+    synonyms: ["биржи", "торговые площадки", "exchanges"]
+    keywords: ["бирж", "площадк"]
+    method: GET
+    path: /v1/exchanges
+
+

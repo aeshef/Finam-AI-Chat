@@ -1,0 +1,101 @@
+uid;type;question;request
+8566443a;DELETE;Прошу отменить ордер ORD789789;DELETE /v1/accounts/{account_id}/orders/ORD789789
+f937da73;DELETE;Отзови мою заявку ORD911911;DELETE /v1/accounts/{account_id}/orders/ORD911911
+c5c4db27;DELETE;Срочно отменить ордер ORD224466;DELETE /v1/accounts/{account_id}/orders/ORD224466
+fdd95c6a;DELETE;Удали заявку ORD456789;DELETE /v1/accounts/{account_id}/orders/ORD456789
+f0c37722;GET;Доступна ли покупка акций 'Мечел' на счете 77777?;GET /v1/assets/MTLR@MISX/params?account_id=77777
+8902acc4;GET;Выведи лот и шаг цены для VTBR@MISX.;GET /v1/assets/VTBR@MISX
+e6875e6c;GET;Выведи колл-опционы на фьючерс на юань.;GET /v1/assets/CRM5@RTSX/options
+a6f06208;GET;Покажи все биржи.;GET /v1/exchanges
+65775ef2;GET;Когда истекает фьючерс на серебро SVM5@RTSX?;GET /v1/assets/SVM5@RTSX
+e86427e7;GET;Какая полная информация по инструменту AFLT@MISX?;GET /v1/assets/AFLT@MISX
+db83e9ba;GET;Какая ставка риска для длинной позиции по фьючерсу на золото GDM5@RTSX?;GET /v1/assets/GDM5@RTSX/params
+477e9c1b;GET;Во сколько начинаются торги по акциям 'ФосАгро'?;GET /v1/assets/PHOR@MISX/schedule
+0ce0be3d;GET;Найди опционы на фьючерс SiZ5@FORTS.;GET /v1/assets/SiZ5@FORTS/options
+1226319f;GET;Покажи всю цепочку опционов для базового актива GAZP@MISX.;GET /v1/assets/GAZP@MISX/options
+bcbce8eb;GET;Покажи тикер и ISIN для акций Роснефти.;GET /v1/assets/ROSN@MISX
+875b7760;GET;Когда закрывается вечерняя сессия для акций 'Норникеля'?;GET /v1/assets/GMKN@MISX/schedule
+f4c6be34;GET;Каков шаг цены для акций 'РусГидро'?;GET /v1/assets/HYDR@MISX
+a084ae57;GET;Какое расписание торгов у акций Сбербанка?;GET /v1/assets/SBER@MISX/schedule
+8e5d2b2a;GET;Дай мне перечень всех торговых площадок.;GET /v1/exchanges
+ef3c6d55;GET;Какие есть колл-опционы на фьючерс на индекс РТС?;GET /v1/assets/RIZ5@RTSX/options
+49bf5030;GET;Дай основную информацию по акциям Яндекса для счета 12345.;GET /v1/assets/YNDX@MISX?account_id=12345
+fa171f5b;GET;Можно ли купить акции 'Ростелеком' на счете 10001?;GET /v1/assets/RTKM@MISX/params?account_id=10001
+45ac9b9d;GET;Какие опционы доступны для базового актива ROSN@MISX?;GET /v1/assets/ROSN@MISX/options
+8003e0e5;GET;Какой тикер у инструмента с ISIN RU0009029540?;GET /v1/assets
+29f43c12;GET;Покажи расписание клиринга для акций 'МосБиржи'.;GET /v1/assets/MOEX@MISX/schedule
+9582e6f2;GET;Какими инструментами я могу торговать?;GET /v1/assets
+5f5a5dad;GET;Могу ли я открыть длинную позицию по акциям 'Полюс Золото'?;GET /v1/assets/PLZL@MISX/params
+67625d1f;GET;Сколько сделок было совершено в августе 2025?;/v1/accounts/ACC-001-A/trades?interval.start_time=2025-08-01T00:00:00Z&interval.end_time=2025-08-31T23:59:59Z
+9934e92d;GET;Найди все сделки на продажу LKOH@MISX за последний квартал;/v1/accounts/USR-305-C/trades?interval.start_time=2025-07-01T00:00:00Z&interval.end_time=2025-09-30T23:59:59Z
+455d2d3f;GET;Есть ли нереализованный убыток на счете USR-305-C?;/v1/accounts/USR-305-C
+22bd4137;GET;Можно ли еще отменить приказ на биржу ORD121212?;GET /v1/accounts/{account_id}/orders/ORD121212
+5f81d57d;GET;Дай мне полный список ордеров;GET /v1/accounts/{account_id}/orders
+51b5cebc;GET;Покажи дневную прибыль по позиции YNDX@MISX на счете ACC-001-A;/v1/accounts/ACC-001-A
+60406b8d;GET;Выгрузить все транзакции за последнюю неделю;/v1/accounts/FIN-203-B/transactions?interval.start_time=2025-09-22T00:00:00Z&interval.end_time=2025-09-28T23:59:59Z
+6a6d5cb1;GET;Покажи историю сделок с акциями Аэрофлота;/v1/accounts/USR-305-C/trades
+da44e62c;GET;Какие были последние 15 транзакций по счету ACC-001-A?;/v1/accounts/ACC-001-A/transactions?limit=15
+2cf2f1ed;GET;Дай мне отчет по сделкам для USR-305-C;/v1/accounts/USR-305-C/trades
+40ada4cf;GET;Покажи детали по ордеру ORD314159;GET /v1/accounts/{account_id}/orders/ORD314159
+cddb28f4;GET;Отобрази количество бумаг по каждой позиции на счете USR-305-C;/v1/accounts/USR-305-C
+ccf9bfbc;GET;Покажи все мои ордера, пожалуйста;GET /v1/accounts/{account_id}/orders
+7574c3e5;GET;Были ли какие-то штрафы или пени на счете FIN-203-B?;/v1/accounts/FIN-203-B/transactions
+671083ad;GET;Расскажи подробнее про ордер ORD111333;GET /v1/accounts/{account_id}/orders/ORD111333
+a268a8af;GET;Какое гарантийное обеспечение для фьючерса SiZ5@RTSX на счете ACC-001-A?;/v1/accounts/ACC-001-A
+d1ab612c;GET;Покажи все заявки, которые еще не исполнились;GET /v1/accounts/{account_id}/orders
+eb33c329;GET;Отобрази все мои длинные позиции;/v1/accounts/FIN-203-B
+1351b934;GET;Покажи все доходные транзакции, например, дивиденды, за последний квартал;/v1/accounts/ACC-001-A/transactions?interval.start_time=2025-07-01T00:00:00Z&interval.end_time=2025-09-30T23:59:59Z
+9084d4a2;GET;Были ли сделки с фьючерсом на доллар вчера?;/v1/accounts/ACC-001-A/trades?interval.start_time=2025-09-28T00:00:00Z&interval.end_time=2025-09-28T23:59:59Z
+5740b777;GET;Найди транзакцию пополнения счета на прошлой неделе;/v1/accounts/USR-305-C/transactions?interval.start_time=2025-09-22T00:00:00Z&interval.end_time=2025-09-28T23:59:59Z
+698c29b1;GET;Покажи мне все мои активные заявки на счете A12345;GET /v1/accounts/A12345/orders
+d72aef3f;GET;Покажи движение денежных средств по счету ACC-001-A;/v1/accounts/ACC-001-A/transactions
+0fbb09bc;GET;Покажи детали по позиции BRF6@RTSX на счете FIN-203-B;/v1/accounts/FIN-203-B
+f58535ee;GET;Каков размер доступных средств, включая маржу, на счете ACC-001-A?;/v1/accounts/ACC-001-A
+f22665bb;GET;Загрузи отчет о сделках за прошлый месяц;/v1/accounts/USR-305-C/trades?interval.start_time=2025-08-01T00:00:00Z&interval.end_time=2025-08-31T23:59:59Z
+a6ca66b5;GET;Есть ли у меня отмененные заявки на счете A12345?;GET /v1/accounts/A12345/orders
+cc3be7ce;GET;Дай сводку по всем заявкам на счете C54321;GET /v1/accounts/C54321/orders
+638a6e8d;GET;Получить историю сделок за прошлый месяц для счета USR-305-C;/v1/accounts/USR-305-C/trades?interval.start_time=2025-08-01T00:00:00Z&interval.end_time=2025-08-31T23:59:59Z
+2c4e09aa;GET;Данные по последней котировке GMKN@MISX.;/v1/instruments/GMKN@MISX/quotes/latest
+39ab1eb6;GET;Выведи 30-минутные бары по акциям Яндекса за вчера.;/v1/instruments/YNDX@MISX/bars?timeframe=TIME_FRAME_M30&interval.start_time=2025-09-28T00:00:00Z&interval.end_time=2025-09-28T23:59:59Z
+1e9e6d78;GET;Какая лучшая цена на покупку и продажу по Лукойлу?;/v1/instruments/LKOH@MISX/quotes/latest
+9a1d5b47;GET;Покажи месячные свечи по Yandex за всё время.;/v1/instruments/YNDX@MISX/bars?timeframe=TIME_FRAME_MN&interval.start_time=2014-01-01T00:00:00Z&interval.end_time=2025-09-29T23:59:59Z
+016805ff;GET;Какой дневной объем торгов по Норникелю?;/v1/instruments/GMKN@MISX/quotes/latest
+43c07ebf;GET;Покажи историю торгов Apple за сегодня.;/v1/instruments/AAPL@SPBEX/trades/latest
+095b906e;GET;Отобрази биржевой стакан для акций Яндекса.;/v1/instruments/YNDX@MISX/orderbook
+f5a014a8;GET;Покажи недельные свечи по фьючерсу на нефть за последний год.;/v1/instruments/BR-10.25@FORTS/bars?timeframe=TIME_FRAME_W&interval.start_time=2024-09-29T00:00:00Z&interval.end_time=2025-09-29T23:59:59Z
+7818bb80;GET;Какой размер последнего трейда по акциям ВТБ?;/v1/instruments/VTBR@MISX/quotes/latest
+852029a4;GET;Отобрази поток сделок для Газпрома.;/v1/instruments/GAZP@MISX/trades/latest
+2f8a272e;GET;Какая цена открытия была сегодня у Магнита?;/v1/instruments/MGNT@MISX/quotes/latest
+2c1d52eb;GET;Какой была цена открытия Газпрома в этом месяце?;/v1/instruments/GAZP@MISX/bars?timeframe=TIME_FRAME_D&interval.start_time=2025-09-01T00:00:00Z&interval.end_time=2025-09-01T23:59:59Z
+438cfeb9;GET;Что по Газпрому сегодня?;/v1/instruments/GAZP@MISX/quotes/latest
+747395f6;GET;Дай мне историю цен на Apple за январь 2025 года с часовым интервалом.;/v1/instruments/AAPL@XNGS/bars?timeframe=TIME_FRAME_H1&interval.start_time=2025-01-01T00:00:00Z&interval.end_time=2025-01-31T23:59:59Z
+9666a710;GET;Дай исторические цены по GMKN@MISX за 2024 год с недельным таймфреймом.;/v1/instruments/GMKN@MISX/bars?timeframe=TIME_FRAME_W&interval.start_time=2024-01-01T00:00:00Z&interval.end_time=2024-12-31T23:59:59Z
+c7f96627;GET;Цена последней сделки по ROSN@MISX.;/v1/instruments/ROSN@MISX/quotes/latest
+775990cc;GET;Какой спред в стакане по LKOH@MISX?;/v1/instruments/LKOH@MISX/orderbook
+36a81e20;GET;Биржевой стакан по Сургутнефтегазу.;/v1/instruments/SNGS@MISX/orderbook
+555f5e0c;GET;Какие заявки на покупку есть в стакане по Сургутнефтегазу?;/v1/instruments/SNGS@MISX/orderbook
+426a68e1;GET;Лента по фьючерсу на РТС.;/v1/instruments/RIZ5@RTSX/trades/latest
+a886e6e5;GET;Какие цены в стакане по фьючерсу Si?;/v1/instruments/SiZ5@RTSX/orderbook
+9bb9b7ee;GET;Какой объем на покупку и продажу по GAZP@MISX?;/v1/instruments/GAZP@MISX/quotes/latest
+c0d42bc4;GET;Выгрузи исторические данные по ROSN@MISX, таймфрейм H4, за Q2 2025.;/v1/instruments/ROSN@MISX/bars?timeframe=TIME_FRAME_H4&interval.start_time=2025-04-01T00:00:00Z&interval.end_time=2025-06-30T23:59:59Z
+da1db5d7;GET;Сбербанк котировки на сейчас.;/v1/instruments/SBER@MISX/quotes/latest
+73bcc687;GET;Отобрази информацию о котировке Сургутнефтегаза.;/v1/instruments/SNGS@MISX/quotes/latest
+c6932fae;GET;Покажи последние сделки по SBER@MISX.;/v1/instruments/SBER@MISX/trades/latest
+9c729fcf;GET;На сколько изменилась цена Полюса сегодня?;/v1/instruments/PLZL@MISX/quotes/latest
+590d8121;POST;Узнай, какой уровень котировок у меня для Азии.;POST /v1/sessions/details
+edab3af0;POST;До какого времени будет работать мой токен?;POST /v1/sessions/details
+84ed2665;POST;Какие счета мне доступны с этим токеном?;POST /v1/sessions/details
+97d960ca;POST;Запросить новый токен.;POST /v1/sessions
+85176be6;POST;Могу ли я видеть полный стакан (depth of book)?;POST /v1/sessions/details
+09163c27;POST;У меня есть доступ к данным по всему миру?;POST /v1/sessions/details
+0e584205;POST;Хочу купить 100 VTBR@MISX по стоп-лимиту: стоп-цена 0.02400, лимитная цена 0.02410;POST /v1/accounts/{account_id}/orders
+7a0cc651;POST;Купи 1000 акций AFLT@MISX по 41.20, заявка должна действовать только сегодня;POST /v1/accounts/{account_id}/orders
+90b4e75a;POST;Создай стоп-лосс для 50 акций GAZP@MISX на уровне 165.00;POST /v1/accounts/{account_id}/orders
+c9064965;POST;Выстави стоп-лимит: если цена ROSN@MISX достигнет 570.00, продай 10 штук по цене не ниже 569.50;POST /v1/accounts/{account_id}/orders
+44b302fb;POST;Создай рыночную заявку на продажу 8 акций GMKN@MISX;POST /v1/accounts/{account_id}/orders
+f45b8f69;POST;Продать 500 акций TRNFP@MISX по лимитной цене 1600.00;POST /v1/accounts/{account_id}/orders
+d67e6550;POST;Создай ордер на продажу 15 ROSN@MISX по 580.00, GTC;POST /v1/accounts/{account_id}/orders
+99a4db2a;POST;Продай 500 SBER@MISX по 270.00, нужно исполнить весь объем сразу или ничего;POST /v1/accounts/{account_id}/orders
+753f77a9;POST;Создай стоп-маркет на продажу 100 AFLT@MISX при цене 40.00;POST /v1/accounts/{account_id}/orders
+63bb770c;POST;Купи 2 фьючерса на газ NGZ5@RTSX по рынку;POST /v1/accounts/{account_id}/orders
+98f751ce;POST;Купи 25 акций NLMK@MISX по 210.00, good till cancel;POST /v1/accounts/{account_id}/orders
