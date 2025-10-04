@@ -25,6 +25,23 @@ python scripts/evaluate.py data/processed/submission.csv data/processed/test.csv
 
 Скрипт проверяет покрытие UID и выводит public/private score. API ключи не требуются.
 
+### One‑liner для генерации сабмишна (форс LLM)
+
+```bash
+cd "/Users/aeshef/Desktop/FINAM/finam-x-hse-trade-ai-hack-trader-main" && \
+source .venv/bin/activate && \
+export OPENROUTER_API_KEY='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' && \
+python scripts/generate_submission.py \
+  --test-file data/processed/test.csv \
+  --train-file data/processed/train.csv \
+  --output-file data/processed/submission.csv \
+  --num-examples 100 \
+  --force-llm && \
+python scripts/merge_predictions.py data/processed/test.csv data/processed/submission.csv data/processed/test_diagnostics.csv
+```
+
+Замена модели (опц.): `export OPENROUTER_MODEL="openai/gpt-4o"` (по умолчанию уже gpt‑4o).
+
 ### Вариант 1: Docker (рекомендуется)
 
 ```bash
@@ -110,6 +127,16 @@ Accuracy = N_correct / N_total
 │   └── submission.csv    # Ваши предсказания
 └── docs/                 # Документация хакатона
 ```
+
+Короткая разбивка по модулям
+
+- src/app/orchestration: планирование → экстракция → safety → исполнение через `ToolRouter`
+- src/app/registry: `EndpointRegistry` (SSOT), классификация путей, подсказки политик
+- src/app/leaderboard/offline_map.py: детерминированный NL→API маппер без LLM
+- src/app/core: конфигурация (`config.py`), вызовы LLM, нормализации, политика, метрики
+- src/app/interfaces: `chat_app.py` (Streamlit UI), `chat_cli.py`
+- src/app/backtest, scanner, portfolio, alerts: функциональные блоки (бэктест, сканер, портфель, алерты)
+- scripts: `generate_submission.py` (LLM), `generate_submission_offline.py` (оффлайн), `evaluate.py`
 
 ## 🔑 Необходимые API ключи
 
