@@ -15,59 +15,28 @@
 
 ## 🧭 Архитектура (коротко)
 
+- Взаимодействие пользователя с Trade API
+
 ![Overview](docs/assets/graph_overview.png)
 
-![Modules](docs/assets/graph_modules.png)
+---
+
+- Архитектуры оркестратора
 
 ![Orchestration sequence](docs/assets/graph_sequence.png)
 
+---
+
+-- Полная архитектура проекта
+
+![Modules](docs/assets/graph_modules.png)
+
+---
+
 ## 🎥 Demo и презентация
 
-- 📄 PDF‑презентация: [`docs/pitch/TRADER.pdf`](docs/pitch/TRADER.pdf)
-- 🎞️ PPTX‑версия: [`docs/pitch/ai_trade.pptx`](docs/pitch/ai_trade.pptx)
-
-## 🚀 Быстрый старт
-
-### Быстрая оффлайн‑проверка (репозиторий)
-
-Для сабмита в формате репозитория (без Docker) доступны оффлайн‑скрипты:
-
-```bash
-python3.11 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### One‑liner для генерации сабмишна (форс LLM)
-
-```bash
-python3.11 -m venv .venv && source .venv/bin/activate && \
-export OPENROUTER_API_KEY=YOUR_KEY && \
-python scripts/generate_submission.py \
-  --test-file data/processed/test.csv \
-  --train-file data/processed/train.csv \
-  --output-file data/processed/submission.csv \
-  --num-examples 100 \
-  --force-llm && \
-python scripts/merge_predictions.py data/processed/test.csv data/processed/submission.csv data/processed/test_diagnostics.csv
-```
-
-Замена модели (опц.): `export OPENROUTER_MODEL="openai/gpt-4o"` (по умолчанию уже gpt‑4o).
-
-### Вариант 1: Локально
-
-```bash
-# 1. Установите зависимости
-poetry install
-
-# 2. Настройте .env
-cp .env.example .env
-
-# 3. Запустите веб-интерфейс
-poetry run streamlit run src/app/interfaces/chat_app.py
-
-# ИЛИ CLI чат
-poetry run chat-cli
-```
+- 📄 Исходная задача [`docs/pitch/TRADER.pdf`](docs/pitch/TRADER.pdf)
+- 🎞️ PPTX‑версия питча: [`docs/pitch/ai_trade.pptx`](docs/pitch/ai_trade.pptx)
 
 ## 🎯 Задача
 
@@ -120,12 +89,52 @@ poetry run chat-cli
 
 Подробности: см. архитектурные материалы в `docs/` (диаграммы, policy, SSOT)
 
+## 🚀 Быстрый старт
+
+### Быстрая оффлайн‑проверка (репозиторий)
+
+Для сабмита в формате репозитория (без Docker) доступны оффлайн‑скрипты:
+
+```bash
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### One‑liner для генерации сабмишна (форс LLM)
+
+```bash
+python3.11 -m venv .venv && source .venv/bin/activate && \
+export OPENROUTER_API_KEY=YOUR_KEY && \
+python scripts/generate_submission.py \
+  --test-file data/processed/test.csv \
+  --train-file data/processed/train.csv \
+  --output-file data/processed/submission.csv \
+  --num-examples 100 \
+  --force-llm && \
+python scripts/merge_predictions.py data/processed/test.csv data/processed/submission.csv data/processed/test_diagnostics.csv
+```
+
+Замена модели (опц.): `export OPENROUTER_MODEL="openai/gpt-4o"` (по умолчанию уже gpt‑4o).
+
+### Вариант 1: Локально
+
+```bash
+# 1. Установите зависимости
+poetry install
+
+# 2. Настройте .env
+cp .env.example .env
+
+# 3. Запустите веб-интерфейс
+poetry run streamlit run src/app/interfaces/chat_app.py
+
+# ИЛИ CLI чат
+poetry run chat-cli
+```
 
 ### Полезные ссылки:
 - [DEVELOPMENT.md](DEVELOPMENT.md) - подробная информация для разработки
-- [docs/pitch/TRADER.pdf](docs/pitch/TRADER.pdf) - презентация с демо
-- [docs/task.md](docs/task.md) - полное описание задачи
-- [docs/evaluation.md](docs/evaluation.md) - методология оценки
+- [docs/pitch/TRADER.pdf](docs/pitch/TRADER.pdf) - исходная задача
 
 ## 📄 Лицензия
 
