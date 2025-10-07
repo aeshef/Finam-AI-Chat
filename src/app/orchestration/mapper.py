@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Tuple
+import os
+from datetime import datetime, timezone
 
 from src.app.core.llm import call_llm
 from src.app.core.prompting import system_prompt_for_mapping, endpoints_spec, symbols_spec
@@ -9,6 +11,7 @@ from src.app.registry.endpoints import EndpointRegistry
 from src.app.orchestration.endpoints import build_from_schema
 from src.app.orchestration.extractor import extract_structured
 from src.app.adapters.finam_client import FinamAPIClient
+from src.app.core.normalize import parse_date_range
 
 
 def _collect_symbols_from_train(train_file: Path) -> list[str]:
@@ -105,8 +108,38 @@ def map_and_execute(
     mapped, _ = generate_api_call(question, model=model, train_file=train_file, force_llm=force_llm)
     method = mapped.get("type", "GET")
     path = mapped.get("request", "/v1/assets")
+    # Default account id from env if not provided
+    if not account_id:
+        account_id = os.getenv("DEFAULT_ACCOUNT_ID") or None
     if account_id and "{account_id}" in path:
         path = path.replace("{account_id}", account_id)
+    # Clamp future end_time for interval placeholders if present
+    if ("/bars" in path or "/trades" in path or "/transactions" in path) and "{slot}" in path:
+        rng = parse_date_range(question)
+        if rng:
+            start, end = rng
+            now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            if end > now_iso:
+                end = now_iso
+            path = path.replace("interval.start_time={slot}", f"interval.start_time={start}")
+            path = path.replace("interval.end_time={slot}", f"interval.end_time={end}")
+
+    # If bars requested without explicit interval params, inject a safe default from question
+    if "/bars" in path and "interval.start_time=" not in path:
+        rng = parse_date_range(question)
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if rng:
+            start, end = rng
+        else:
+            # fallback: last 30 days
+            from datetime import timedelta as _td
+            start_dt = datetime.now(timezone.utc) - _td(days=30)
+            start = start_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            end = now_iso
+        if end > now_iso:
+            end = now_iso
+        sep = "&" if "?" in path else "?"
+        path = f"{path}{sep}timeframe=TIME_FRAME_D&interval.start_time={start}&interval.end_time={end}"
     client = FinamAPIClient(access_token=api_token)
     api_response = client.execute_request(method, path)
     return {"type": method, "request": path, "response": api_response, "_source": mapped.get("_source", "")}

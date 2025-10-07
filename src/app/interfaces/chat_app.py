@@ -97,16 +97,35 @@ def main() -> None:  # noqa: C901
                 type="password",
                 help="Токен доступа к Finam TradeAPI (или используйте FINAM_ACCESS_TOKEN)",
             )
+            # Fallback: загрузим из auth.json, если поле пустое и нет FINAM_ACCESS_TOKEN
+            if not api_token and not os.getenv("FINAM_ACCESS_TOKEN"):
+                try:
+                    with open(os.path.join(PROJECT_ROOT, "auth.json"), encoding="utf-8") as _af:
+                        _aj = json.load(_af)
+                        _tok = (_aj or {}).get("token", "")
+                        if _tok:
+                            api_token = _tok
+                            st.caption("Token: загружен из auth.json")
+                except Exception:
+                    pass
             api_base_url = st.text_input("API Base URL", value="https://api.finam.ru", help="Базовый URL API")
         backend = st.selectbox("Backend", options=["http", "mcp"], index=0, help="Способ выполнения запросов")
 
         confirm_action = st.checkbox("✅ Подтвердить торговые действия (POST/DELETE)", value=False)
 
-        # Автоподстановка account_id (показываем только если есть)
+        # Автоподстановка account_id + ручное обновление
         account_id = st.session_state.get("_account_id_autofill", "")
-        if account_id:
-            st.caption(f"ID счета: {account_id}")
-        benchmark_symbol = st.text_input("Бенчмарк (символ)", value="IMOEX@MISX", help="Напр.: IMOEX@MISX, SBER@MISX и т.п.")
+        colAcc1, colAcc2 = st.columns([2,1])
+        with colAcc1:
+            if account_id:
+                st.caption(f"ID счета: {account_id}")
+            else:
+                st.caption("ID счета: — (попробуйте обновить ниже)")
+        with colAcc2:
+            if st.button("Обновить ID счёта"):
+                # Выполним обновление после инициализации finam_client ниже
+                st.session_state["_refresh_account"] = True
+        benchmark_symbol = st.text_input("Бенчмарк (символ)", value="SBER@MISX", help="Напр.: SBER@MISX, LQDT@MISX, IMOEX@MISX, SBMX@MISX (ETF на IMOEX), TMOS@MISX, FXRL@MISX")
         st.caption("Используется для сравнения с портфелем на графике 'Equity vs Benchmark'")
 
         if st.button("🔄 Очистить историю"):
@@ -285,7 +304,7 @@ def main() -> None:  # noqa: C901
                     st.error(f"Не удалось сохранить пресет: {e}")
         st.markdown("---")
         st.subheader("🧮 Сканер")
-        scanner_symbols = st.text_input("Символы (через запятую)", value="SBER@MISX,GAZP@MISX,YNDX@MISX")
+        scanner_symbols = st.text_input("Символы (через запятую)", value="SBER,GAZP", help="Можно без рынка: SBER, GAZP; автоматически преобразуем в формат API")
         scanner_timeframe = st.selectbox(
             "Таймфрейм",
             options=[
@@ -394,6 +413,39 @@ def main() -> None:  # noqa: C901
             pass
     # Обновим локальную переменную и сканер-спеку после возможной автозаполнения
     account_id = st.session_state.get("_account_id_autofill", "")
+    # Выполним отложенное обновление ID счёта, если запрошено кнопкой
+    try:
+        if st.session_state.get("_refresh_account") and finam_client.access_token:
+            details = finam_client.get_session_details() or {}
+            account_id_found = None
+            accs = details.get("account_ids")
+            if isinstance(accs, list) and accs:
+                account_id_found = str(accs[0])
+            if not account_id_found:
+                acc_list = details.get("accounts") or details.get("data") or []
+                if isinstance(acc_list, list) and acc_list:
+                    first = acc_list[0]
+                    if isinstance(first, dict):
+                        for k in ("id", "accountId", "account_id"):
+                            if first.get(k):
+                                account_id_found = str(first[k])
+                                break
+            if not account_id_found:
+                for k in ("id", "accountId", "account_id", "account"):
+                    if details.get(k):
+                        account_id_found = str(details[k])
+                        break
+            if account_id_found:
+                st.session_state["_account_id_autofill"] = account_id_found
+                account_id = account_id_found
+                st.sidebar.success("ID счёта обновлён")
+            else:
+                st.sidebar.warning("Не удалось найти ID счёта в ответе сессии")
+                with st.sidebar.expander("Диагностика сессии", expanded=False):
+                    st.json(details)
+        st.session_state["_refresh_account"] = False
+    except Exception:
+        st.session_state["_refresh_account"] = False
     if st.session_state.get("_scanner_spec"):
         st.session_state["_scanner_spec"]["account_id"] = account_id or None
 
@@ -417,8 +469,13 @@ def main() -> None:  # noqa: C901
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # Формируем историю для LLM
+        # Формируем историю для LLM (+ контекст с account_id для корректной подстановки)
         conversation_history = [{"role": "system", "content": create_system_prompt()}]
+        if account_id:
+            conversation_history.append({
+                "role": "system",
+                "content": f"Контекст: если в запросе требуется идентификатор счёта, используй {account_id}. Если встречается placeholder {'{account_id}'}, подставь это значение."
+            })
         for msg in st.session_state.messages:
             conversation_history.append({"role": msg["role"], "content": msg["content"]})
 
@@ -463,7 +520,13 @@ def main() -> None:  # noqa: C901
                                 st.info(result.suggestions)
                     if result.trace:
                         with st.expander("⏱️ Trace", expanded=False):
-                            st.json(result.trace)
+                            import os as _os
+                            env_info = {
+                                "OPENROUTER_API_KEY": "set" if bool(_os.getenv("OPENROUTER_API_KEY")) else "unset",
+                                "FINAM_ACCESS_TOKEN": "set" if bool(_os.getenv("FINAM_ACCESS_TOKEN")) else "unset",
+                                "FINAM_API_BASE_URL": _os.getenv("FINAM_API_BASE_URL", "") or "https://api.finam.ru",
+                            }
+                            st.json({"trace": result.trace, "env": env_info})
 
                     # Проверяем на ошибки
                     if "error" in api_response:
@@ -560,66 +623,214 @@ def main() -> None:  # noqa: C901
         if st.session_state.get("_portfolio_run") and account_id:
             st.markdown("## 🧺 Отчет по портфелю")
             snap = get_portfolio_snapshot(router, account_id)  # type: ignore[arg-type]
-            # Sunburst всегда
-            sb = build_sunburst_data(snap)
-            fig_sb = go.Figure(go.Sunburst(labels=sb["labels"], parents=sb["parents"], values=sb["values"], branchvalues="total"))
-            st.plotly_chart(fig_sb, use_container_width=True)
-
-            # Equity vs benchmark, если есть история; иначе — круговые диаграммы по символам/классам
-            try:
-                bench = st.session_state.get("_benchmark_symbol") or None
-                eq = compute_equity_curve(router, snap, days=60, benchmark_symbol=bench)
-                has_history = bool(eq.get("dates")) and len(eq.get("dates", [])) > 1 and max(eq.get("equity", [0])) > 0
-            except Exception:
-                has_history = False
-
-            if has_history:
-                fig_eq = go.Figure()
-                fig_eq.add_trace(go.Scatter(x=eq["dates"], y=eq["equity"], name="Equity"))
-                if "benchmark" in eq:
-                    fig_eq.add_trace(go.Scatter(x=eq["dates"], y=eq["benchmark"], name="Benchmark"))
-                st.plotly_chart(fig_eq, use_container_width=True)
+            fig_sb: object | None = None
+            fig_eq: object | None = None
+            # Single pie: positions + cash
+            pos_nz = [p for p in (snap.positions or []) if (p.market_value or 0) > 0]
+            labels = [p.symbol for p in pos_nz]
+            values = [p.market_value for p in pos_nz]
+            cash_total = sum(snap.cash.values()) if snap.cash else 0.0
+            if cash_total > 0:
+                labels.append("CASH")
+                values.append(cash_total)
+            if labels and sum(values) > 0:
+                fig_pie = go.Figure(go.Pie(labels=labels, values=values, hole=0.3, name="Portfolio"))
+                st.plotly_chart(fig_pie, use_container_width=True)
             else:
-                # Pie by symbol
-                if snap.positions:
-                    labels = [p.symbol for p in snap.positions]
-                    values = [p.market_value for p in snap.positions]
-                    st.plotly_chart(go.Figure(go.Pie(labels=labels, values=values, hole=0.3, name="By symbol")), use_container_width=True)
-                    # Pie by sector/type (reuse sector field)
-                    from collections import defaultdict as _dd
-                    g = _dd(float)
-                    for p in snap.positions:
-                        g[p.sector] += p.market_value
-                    labels2 = list(g.keys())
-                    values2 = [g[k] for k in labels2]
-                    st.plotly_chart(go.Figure(go.Pie(labels=labels2, values=values2, hole=0.3, name="By sector")), use_container_width=True)
-                else:
-                    # если нет позиций — покажем распределение кэша, если есть
-                    if snap.cash:
-                        cash_labels = list(snap.cash.keys())
-                        cash_values = [float(v) for v in snap.cash.values()]
-                        st.plotly_chart(go.Figure(go.Pie(labels=cash_labels, values=cash_values, hole=0.3, name="Cash by currency")), use_container_width=True)
-                    with st.expander("ℹ️ Диагностика портфеля", expanded=True):
-                        try:
-                            acct_raw = router.execute(ToolRequest(method="GET", path=f"/v1/accounts/{account_id}"))
-                        except Exception as _e:
-                            acct_raw = {"error": str(_e)}
-                        st.json({
-                            "account_id": account_id,
-                            "account_preview": acct_raw if isinstance(acct_raw, dict) else (acct_raw[:3] if isinstance(acct_raw, list) else acct_raw),
-                            "hint": "нет позиций; проверьте, что есть активы или используйте другой аккаунт",
-                        })
+                st.info("Нет данных портфеля для диаграммы (позиции/кэш отсутствуют).")
+
+            # Benchmark normalized line (last 60 days)
+            start_iso = normalize_iso8601("последние 60 дней")
+            end_iso = normalize_iso8601("сегодня")
+            bench_sym_input = st.session_state.get("_benchmark_symbol") or "IMOEX@MISX"
+            bench_change_pct: float | None = None
+            # Подбор бенчмарка и таймфрейма, если дневные бары пусты
+            # Build candidate list (deduplicated, order‑preserving)
+            raw_candidates = [bench_sym_input, "SBER@MISX", "LQDT@MISX"]
+            env_bench = os.getenv("DEFAULT_BENCHMARK_SYMBOLS", "")
+            raw_candidates += [s.strip() for s in env_bench.split(",") if s.strip()]
+            raw_candidates += ["IMOEX@MISX", "MOEX@MISX", "IMOEX", "SBMX@MISX", "TMOS@MISX", "FXRL@MISX"]
+            seen: set[str] = set()
+            candidates: list[str] = []
+            for c in raw_candidates:
+                if c and c not in seen:
+                    candidates.append(c)
+                    seen.add(c)
+            picked_sym = None
+            xs_bm, ys_bm, o_bm, h_bm, l_bm, c_bm = [], [], [], [], [], []
+            bm_try_paths: list[str] = []
+
+            # Helper to normalize bars list from various shapes
+            def _bars_list(raw: object) -> list:
+                if isinstance(raw, list):
+                    return raw
+                if isinstance(raw, dict):
+                    for k in ("bars", "candles", "data", "items", "result"):
+                        v = raw.get(k)  # type: ignore[call-arg]
+                        if isinstance(v, list):
+                            return v
+                return []
+            for sym in candidates:
+                for tf in ("TIME_FRAME_D", "TIME_FRAME_W", "TIME_FRAME_MN"):
+                    try:
+                        # Try instruments path first
+                        path_bm = f"/v1/instruments/{sym}/bars?timeframe={tf}&interval.start_time={start_iso}&interval.end_time={end_iso}"
+                        bm_try_paths.append(path_bm)
+                        raw_bm = router.execute(ToolRequest(method="GET", path=path_bm))
+                        bm_bars = _bars_list(raw_bm)
+                        xs_bm, ys_bm, o_bm, h_bm, l_bm, c_bm = [], [], [], [], [], []
+                        for b in bm_bars:
+                            t = str(b.get("time") or b.get("timestamp") or b.get("date"))
+                            c = b.get("close") or b.get("c") or b.get("price")
+                            try:
+                                ys_bm.append(float(c)); xs_bm.append(t)
+                                o_bm.append(float(b.get("open") or b.get("o") or c))
+                                h_bm.append(float(b.get("high") or b.get("h") or c))
+                                l_bm.append(float(b.get("low") or b.get("l") or c))
+                                c_bm.append(float(c))
+                            except Exception:
+                                continue
+                        if ys_bm:
+                            picked_sym = f"{sym}"
+                            break
+                        # If empty, try assets path variant
+                        path_bm2 = f"/v1/assets/{sym}/bars?timeframe={tf}&interval.start_time={start_iso}&interval.end_time={end_iso}"
+                        bm_try_paths.append(path_bm2)
+                        raw_bm2 = router.execute(ToolRequest(method="GET", path=path_bm2))
+                        bm_bars2 = _bars_list(raw_bm2)
+                        xs_bm, ys_bm, o_bm, h_bm, l_bm, c_bm = [], [], [], [], [], []
+                        for b in bm_bars2:
+                            t = str(b.get("time") or b.get("timestamp") or b.get("date"))
+                            c = b.get("close") or b.get("c") or b.get("price")
+                            try:
+                                ys_bm.append(float(c)); xs_bm.append(t)
+                                o_bm.append(float(b.get("open") or b.get("o") or c))
+                                h_bm.append(float(b.get("high") or b.get("h") or c))
+                                l_bm.append(float(b.get("low") or b.get("l") or c))
+                                c_bm.append(float(c))
+                            except Exception:
+                                continue
+                        if ys_bm:
+                            picked_sym = f"{sym}"
+                            break
+                    except Exception:
+                        continue
+                if picked_sym:
+                    break
+            if ys_bm:
+                try:
+                    bench_change_pct = (ys_bm[-1] - ys_bm[0]) / ys_bm[0] * 100.0
+                except Exception:
+                    bench_change_pct = None
+                st.subheader(f"Бенчмарк: {picked_sym or bench_sym_input} {('+' if (bench_change_pct or 0)>=0 else '')}{(bench_change_pct or 0):.1f}% за 60д")
+                if c_bm and o_bm and h_bm and l_bm:
+                    fig_bm_c = make_subplots(rows=1, cols=1, specs=[[{"secondary_y": False}]])
+                    fig_bm_c.add_trace(go.Candlestick(x=xs_bm, open=o_bm, high=h_bm, low=l_bm, close=c_bm, name=f"{picked_sym or bench_sym_input}"))
+                    fig_bm_c.update_layout(height=300, margin=dict(l=10, r=10, t=20, b=10))
+                    st.plotly_chart(fig_bm_c, use_container_width=True)
+                base = ys_bm[0]
+                yn = [v / base * 100.0 for v in ys_bm]
+                fig_bm = go.Figure(go.Scatter(x=xs_bm, y=yn, name=f"{picked_sym or bench_sym_input} (норм=100)"))
+                fig_bm.update_layout(height=300, margin=dict(l=10, r=10, t=20, b=10))
+                st.plotly_chart(fig_bm, use_container_width=True)
+                fig_eq = fig_bm
+            else:
+                # Явный маркер отсутствия данных по бенчмарку + попытки
+                st.caption(f"Нет данных баров для бенчмарка среди кандидатов: {', '.join(candidates)}. Проверьте символ.")
+                with st.expander("ℹ️ Диагностика бенчмарка", expanded=False):
+                    for p in bm_try_paths[:6]:
+                        st.code(f"GET {p}")
+
+            # OHLCV per asset (up to 6)
+            def _num(x: object) -> float:
+                try:
+                    if isinstance(x, dict):
+                        x = x.get("value")
+                    return float(x) if x is not None else 0.0
+                except Exception:
+                    return 0.0
+
+            for p in pos_nz[:6]:
+                try:
+                    path_bars = f"/v1/instruments/{p.symbol}/bars?timeframe=TIME_FRAME_D&interval.start_time={start_iso}&interval.end_time={end_iso}"
+                    raw_bars = router.execute(ToolRequest(method="GET", path=path_bars))
+                    bars = _bars_list(raw_bars)
+                    if not bars:
+                        # try assets path variant
+                        path_bars2 = f"/v1/assets/{p.symbol}/bars?timeframe=TIME_FRAME_D&interval.start_time={start_iso}&interval.end_time={end_iso}"
+                        raw_bars2 = router.execute(ToolRequest(method="GET", path=path_bars2))
+                        bars = _bars_list(raw_bars2)
+                    if not bars:
+                        continue
+                    opens = [_num(b.get("open") or b.get("o")) for b in bars]
+                    highs = [_num(b.get("high") or b.get("h")) for b in bars]
+                    lows = [_num(b.get("low") or b.get("l")) for b in bars]
+                    closes = [_num(b.get("close") or b.get("c") or b.get("price")) for b in bars]
+                    volumes = [_num(b.get("volume") or b.get("v")) for b in bars]
+                    times_b = [str(b.get("time") or b.get("timestamp") or b.get("date")) for b in bars]
+                    fig_q = make_subplots(rows=1, cols=1, specs=[[{"secondary_y": True}]])
+                    fig_q.add_trace(go.Candlestick(x=times_b, open=opens, high=highs, low=lows, close=closes, name=f"{p.symbol}"), secondary_y=False)
+                    fig_q.add_trace(go.Bar(x=times_b, y=volumes, name="Volume", marker_color="#aaa", opacity=0.3), secondary_y=True)
+                    fig_q.update_yaxes(title_text="Price", secondary_y=False)
+                    fig_q.update_yaxes(title_text="Volume", secondary_y=True)
+                    fig_q.update_layout(height=360, margin=dict(l=10, r=10, t=20, b=10))
+                    st.plotly_chart(fig_q, use_container_width=True)
+                except Exception:
+                    continue
+
+            # Diagnostics + LLM краткий совет по распределению
+            try:
+                total_mv = sum(values) if values else 0.0
+                diag_positions = [
+                    {"symbol": p.symbol, "market_value": round(p.market_value, 2)} for p in pos_nz
+                ]
+                diag = {
+                    "equity_est": round((total_mv + cash_total), 2),
+                    "cash_total": round(cash_total, 2),
+                    "positions": diag_positions,
+                }
+                with st.expander("ℹ️ Диагностика портфеля", expanded=True):
+                    st.json(diag)
+
+                # Сформируем конкретный совет через LLM: коротко и с числами/символами
+                try:
+                    weights = [(p['symbol'], round((p['market_value']/(total_mv or 1))*100, 1)) for p in diag_positions]
+                    weights_sorted = sorted(weights, key=lambda x: x[1], reverse=True)
+                    weights_str = ", ".join(f"{sym}: {pct}%" for sym, pct in weights_sorted)
+                    top_sym = weights_sorted[0][0] if weights_sorted else "—"
+                    cash_pct = round((cash_total/(((total_mv or 0)+cash_total) or 1))*100, 1)
+                    bench_ctx = f"Бенчмарк {picked_sym or bench_sym_input}: {('+' if (bench_change_pct or 0)>=0 else '')}{(bench_change_pct or 0):.1f}% за 60д" if bench_change_pct is not None else f"Бенчмарк {picked_sym or bench_sym_input}: нет данных"
+                    prompt_advice = (
+                        "Дано распределение портфеля и бенчмарк. Напиши краткий аналитический комментарий (2–4 коротких предложения) и практические рекомендации. "
+                        "Избегай общих фраз; ссылайся на символы/доли/кэш по мере уместности. Формат свободный, без преамбулы.\n\n"
+                        f"Контекст: {bench_ctx}. Позиции: {weights_str or '—'}. Кэш: {cash_pct}%. Топ: {top_sym}."
+                    )
+                    resp = call_llm([{"role": "user", "content": prompt_advice}], temperature=0.2)
+                    advice = resp["choices"][0]["message"]["content"].strip()
+                    if advice:
+                        st.success(advice)
+                        with st.expander("LLM совет (trace)", expanded=False):
+                            st.markdown("Промпт:")
+                            st.code(prompt_advice)
+                            st.markdown("Ответ:")
+                            st.write(advice)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+            # (убрано дублирующееся окно диагностики)
 
             # Export buttons
             export_dir = "reports"
             os.makedirs(export_dir, exist_ok=True)
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("💾 Сохранить Sunburst (HTML)"):
+                if fig_sb is not None and st.button("💾 Сохранить Sunburst (HTML)"):
                     fig_sb.write_html(os.path.join(export_dir, "portfolio_sunburst.html"))
                     st.success("Сохранено: reports/portfolio_sunburst.html")
             with col2:
-                if st.button("🖼️ Сохранить Equity (PNG)"):
+                if fig_eq is not None and st.button("🖼️ Сохранить Equity (PNG)"):
                     fig_eq.write_image(os.path.join(export_dir, "portfolio_equity.png"))
                     st.success("Сохранено: reports/portfolio_equity.png")
     except Exception as e:
@@ -730,8 +941,13 @@ def main() -> None:  # noqa: C901
         if st.session_state.get("_scanner_run"):
             st.markdown("## 🔎 Результаты сканера")
             ss = st.session_state.get("_scanner_spec") or {}
+            # Normalize simple tickers to market symbols (SBER -> SBER@MISX)
+            from src.app.core.normalize import infer_market_symbol as _infer_market_symbol
+            _raw_syms = ss.get("symbols", ["SBER", "GAZP"]) or []
+            _norm_syms = [_infer_market_symbol(s) for s in _raw_syms]
+
             spec = ScreenSpec(
-                symbols=ss.get("symbols", ["SBER@MISX", "GAZP@MISX", "YNDX@MISX"]),
+                symbols=_norm_syms,
                 timeframe=ss.get("timeframe", "TIME_FRAME_D"),
                 start=ss.get("start", "последние 30 дней"),
                 end=ss.get("end", "сегодня"),
@@ -762,18 +978,98 @@ def main() -> None:  # noqa: C901
                         "symbol": r.symbol,
                         "growth %": _fmt_pct(r.growth_pct),
                         "volume": _fmt_int(r.total_volume),
-                        "short_available": r.short_available,
                     }
                     for r in results
                 ])
                 st.dataframe(df_display, use_container_width=True)
-                # Sparklines
+                # OHLCV candlesticks per result (limit for UI)
                 try:
+                    from plotly.subplots import make_subplots as _make_subplots
                     import plotly.graph_objects as _go
-                    for r in results[:10]:
-                        fig_sp = _go.Figure(_go.Scatter(y=r.sparkline, mode="lines", name=r.symbol))
-                        fig_sp.update_layout(height=120, margin=dict(l=10, r=10, t=20, b=10))
-                        st.plotly_chart(fig_sp, use_container_width=True)
+                    start_iso = normalize_iso8601(spec.start)
+                    end_iso = normalize_iso8601(spec.end)
+                    shown = 0
+                    for r in results:
+                        if shown >= 6:
+                            break
+                        try:
+                            path_bars = f"/v1/instruments/{r.symbol}/bars?timeframe={spec.timeframe}&interval.start_time={start_iso}&interval.end_time={end_iso}"
+                            raw_bars = router.execute(ToolRequest(method="GET", path=path_bars))
+                            bars = []
+                            if isinstance(raw_bars, list):
+                                bars = raw_bars
+                            elif isinstance(raw_bars, dict):
+                                for key in ("bars", "candles", "data", "items", "result"):
+                                    v = raw_bars.get(key)
+                                    if isinstance(v, list):
+                                        bars = v
+                                        break
+                            if not bars:
+                                # try assets path
+                                path_bars2 = f"/v1/assets/{r.symbol}/bars?timeframe={spec.timeframe}&interval.start_time={start_iso}&interval.end_time={end_iso}"
+                                raw_bars2 = router.execute(ToolRequest(method="GET", path=path_bars2))
+                                if isinstance(raw_bars2, list):
+                                    bars = raw_bars2
+                                elif isinstance(raw_bars2, dict):
+                                    for key in ("bars", "candles", "data", "items", "result"):
+                                        v = raw_bars2.get(key)
+                                        if isinstance(v, list):
+                                            bars = v
+                                            break
+                            if not bars:
+                                continue
+                            def _num(x: object) -> float:
+                                try:
+                                    if isinstance(x, dict):
+                                        x = x.get("value")
+                                    return float(x) if x is not None else 0.0
+                                except Exception:
+                                    return 0.0
+                            opens = [_num(b.get("open") or b.get("o")) for b in bars]
+                            highs = [_num(b.get("high") or b.get("h")) for b in bars]
+                            lows = [_num(b.get("low") or b.get("l")) for b in bars]
+                            closes = [_num(b.get("close") or b.get("c") or b.get("price")) for b in bars]
+                            volumes = [_num(b.get("volume") or b.get("v")) for b in bars]
+                            times_b = [str(b.get("time") or b.get("timestamp") or b.get("date")) for b in bars]
+                            fig_q = _make_subplots(rows=1, cols=1, specs=[[{"secondary_y": True}]])
+                            fig_q.add_trace(_go.Candlestick(x=times_b, open=opens, high=highs, low=lows, close=closes, name=f"{r.symbol}"), secondary_y=False)
+                            fig_q.add_trace(_go.Bar(x=times_b, y=volumes, name="Volume", marker_color="#aaa", opacity=0.3), secondary_y=True)
+                            fig_q.update_yaxes(title_text="Price", secondary_y=False)
+                            fig_q.update_yaxes(title_text="Volume", secondary_y=True)
+                            fig_q.update_layout(height=360, margin=dict(l=10, r=10, t=20, b=10))
+                            st.plotly_chart(fig_q, use_container_width=True)
+                            shown += 1
+                        except Exception:
+                            continue
+                except Exception:
+                    pass
+                # Short LLM summary based on table (symbols, growth %, volume)
+                try:
+                    rows_ctx = []
+                    for r in results[:8]:
+                        g = r.growth_pct if r.growth_pct is not None else 0.0
+                        v = r.total_volume if r.total_volume is not None else 0.0
+                        rows_ctx.append({"symbol": r.symbol, "growth_pct": round(float(g), 2), "volume": float(v)})
+                    if rows_ctx:
+                        # Compose compact context string
+                        ctx_str = ", ".join(
+                            f"{row['symbol']}: {row['growth_pct']:+.2f}% vol {int(row['volume']):,}".replace(",", " ")
+                            for row in rows_ctx
+                        )
+                        prompt_scan = (
+                            "Ты аналитик рынка. По результатам сканера сформулируй 2–4 коротких предложения: вывод по динамике и ликвидности, конкретные тикеры и практические шаги. "
+                            "Избегай общих фраз и вступлений, сразу по делу.\n\n"
+                            f"Данные: {ctx_str}."
+                        )
+                        resp = call_llm([{"role": "user", "content": prompt_scan}], temperature=0.2)
+                        advice = resp["choices"][0]["message"]["content"].strip()
+                        if advice:
+                            st.success(advice)
+                            with st.expander("LLM комментарий (сканер)", expanded=False):
+                                st.markdown("Промпт:")
+                                st.code(prompt_scan)
+                                st.markdown("Ответ:")
+                                st.write(advice)
                 except Exception:
                     pass
             else:
@@ -809,8 +1105,12 @@ def main() -> None:  # noqa: C901
                 os.makedirs("reports", exist_ok=True)
                 csv_path = "reports/scanner_results.csv"
                 try:
-                    df.to_csv(csv_path, index=False)  # type: ignore[name-defined]
-                    st.success(csv_path)
+                    # export the displayed dataframe
+                    if 'df_display' in locals():
+                        df_display.to_csv(csv_path, index=False)
+                        st.success(csv_path)
+                    else:
+                        st.warning("Нет данных для экспорта")
                 except Exception:
                     st.warning("Нет данных для экспорта")
     except Exception as e:

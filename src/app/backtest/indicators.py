@@ -35,3 +35,4 @@ def ema(values: List[float], window: int) -> List[Optional[float]]:
 
 
 
+

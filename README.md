@@ -1,7 +1,30 @@
-# \[Trader\] Finam x HSE Trade AI Hack - Baseline
+# Trader AI Assistant — Finam x HSE Hack (Prize-winning build)
 
-> **AI-ассистент трейдера** на базе Finam TradeAPI
-> Базовый шаблон для хакатона по созданию интеллектуального помощника для трейдинга
+> **AI‑ассистент трейдера** на базе Finam TradeAPI
+> Production‑quality сборка, занявшая призовое место на хакатоне
+
+> "From natural language to safe executable API calls — with portfolio, scanner and backtests in one UI."
+
+## ✨ Highlights
+
+- 🔁 **NL→API за 1 шаг**: intent, параметры и корректный METHOD/PATH без костылей
+- 🛡️ **Safety‑by‑Design**: confirm‑карточка перед POST/DELETE, policy reasons, аудит
+- 📚 **SSOT‑реестр**: `configs/endpoints.yaml` как единый источник правды (UI = Leaderboard)
+- 🧩 **Ширина покрытия**: Портфель (sunburst/benchmark), Сканер (shortable), Бэктест (пресет+кастом), Алерты
+- 📈 **Observability**: trace стадий, метрики, кэш TTL, rate‑limit
+
+## 🧭 Архитектура (коротко)
+
+![Overview](docs/assets/graph_overview.png)
+
+![Modules](docs/assets/graph_modules.png)
+
+![Orchestration sequence](docs/assets/graph_sequence.png)
+
+## 🎥 Demo и презентация
+
+- 📄 PDF‑презентация: [`docs/pitch/TRADER.pdf`](docs/pitch/TRADER.pdf)
+- 🎞️ PPTX‑версия: [`docs/pitch/ai_trade.pptx`](docs/pitch/ai_trade.pptx)
 
 ## 🚀 Быстрый старт
 
@@ -12,25 +35,13 @@
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Сгенерировать submission (объединить public train + public test)
-python scripts/generate_submission_offline.py \
-  --test-file data/processed/test.csv \
-  --include-train data/processed/train.csv \
-  --output-file data/processed/submission.csv
-
-# Оценить локально (совместимо с форматом хакатона)
-python scripts/evaluate.py data/processed/submission.csv data/processed/test.csv data/processed/train.csv
 ```
-
-Скрипт проверяет покрытие UID и выводит public/private score. API ключи не требуются.
 
 ### One‑liner для генерации сабмишна (форс LLM)
 
 ```bash
-cd "/Users/aeshef/Desktop/FINAM/finam-x-hse-trade-ai-hack-trader-main" && \
-source .venv/bin/activate && \
-export OPENROUTER_API_KEY='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' && \
+python3.11 -m venv .venv && source .venv/bin/activate && \
+export OPENROUTER_API_KEY=YOUR_KEY && \
 python scripts/generate_submission.py \
   --test-file data/processed/test.csv \
   --train-file data/processed/train.csv \
@@ -42,25 +53,7 @@ python scripts/merge_predictions.py data/processed/test.csv data/processed/submi
 
 Замена модели (опц.): `export OPENROUTER_MODEL="openai/gpt-4o"` (по умолчанию уже gpt‑4o).
 
-### Вариант 1: Docker (рекомендуется)
-
-```bash
-# 1. Скопируйте пример конфигурации
-cp .env.example .env
-
-# 2. Отредактируйте .env и добавьте API ключи
-# OPENROUTER_API_KEY=your_key
-# FINAM_ACCESS_TOKEN=your_token (опционально)
-
-# 3. Запустите приложение
-make up
-# или: docker-compose up -d
-
-# 4. Откройте в браузере
-# http://localhost:8501
-```
-
-### Вариант 2: Локально
+### Вариант 1: Локально
 
 ```bash
 # 1. Установите зависимости
@@ -76,25 +69,6 @@ poetry run streamlit run src/app/interfaces/chat_app.py
 poetry run chat-cli
 ```
 
-## 📋 Основные команды
-
-```bash
-# Генерация submission.csv
-make generate
-# или: poetry run generate-submission
-
-# Валидация submission
-make validate
-# или: poetry run validate-submission
-
-# Подсчет метрики
-make metrics
-# или: poetry run calculate-metrics
-
-# Просмотр логов Docker
-make logs
-```
-
 ## 🎯 Задача
 
 Создать AI-ассистента, который преобразует вопросы на естественном языке в HTTP запросы к Finam TradeAPI.
@@ -102,11 +76,6 @@ make logs
 **Пример:**
 - Вопрос: *"Какая цена Сбербанка?"*
 - API запрос: `GET /v1/instruments/SBER@MISX/quotes/latest`
-
-**Метрика:**
-```
-Accuracy = N_correct / N_total
-```
 
 Запрос считается правильным, если полностью совпал с эталоном (и HTTP метод, и путь).
 
@@ -148,47 +117,16 @@ Accuracy = N_correct / N_total
    - Документация: https://tradeapi.finam.ru/
    - Нужен только для работы с реальным API в чат-интерфейсе
 
-## 💡 Что дальше?
 
-### Для участников хакатона:
-1. **Улучшите accuracy** - экспериментируйте с промптами, few-shot примерами, моделями
-2. **Реализуйте продвинутые кейсы** - портфельный анализ, визуализация, бэктестинг
-3. **Создайте UI** - используйте готовый Streamlit или создайте свой
+Подробности: см. архитектурные материалы в `docs/` (диаграммы, policy, SSOT)
+
 
 ### Полезные ссылки:
 - [DEVELOPMENT.md](DEVELOPMENT.md) - подробная информация для разработки
-- [SUMMARY.md](SUMMARY.md) - итоговое резюме проекта
+- [docs/pitch/TRADER.pdf](docs/pitch/TRADER.pdf) - презентация с демо
 - [docs/task.md](docs/task.md) - полное описание задачи
 - [docs/evaluation.md](docs/evaluation.md) - методология оценки
 
-## 📊 Пример работы
-
-**Генерация submission:**
-```bash
-poetry run generate-submission --num-examples 15
-
-🚀 Генерация submission файла...
-✅ Загружено 15 примеров для few-shot learning
-🤖 Используется модель: openai/gpt-4o-mini
-
-Обработка: 100%|████████| 300/300 [02:15, cost=$0.0423]
-
-💰 Общая стоимость: $0.0423
-📊 GET: 285, POST: 12, DELETE: 3
-```
-
-**Подсчет метрики:**
-```bash
-poetry run calculate-metrics
-
-🎯 ОСНОВНАЯ МЕТРИКА:
-   Accuracy = 87/100 = 0.8700 (87.00%)
-```
-
-## 🤝 Поддержка
-
-Для вопросов по хакатону обращайтесь к организаторам.
-
 ## 📄 Лицензия
 
-Этот проект создан как baseline для хакатона Finam x HSE.
+Этот проект создан для хакатона Finam x HSE.

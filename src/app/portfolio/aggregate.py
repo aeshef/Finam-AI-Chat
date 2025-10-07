@@ -68,16 +68,28 @@ def _extract_cash(account_resp: Dict[str, Any]) -> Dict[str, float]:
                 continue
         return out
     if isinstance(balances, list):
-        # common shape: [{"currency":"RUB","amount":123.45}, ...]
+        # common shapes:
+        # 1) [{"currency":"RUB","amount":123.45}, ...]
+        # 2) [{"currency_code":"RUB", "units":"4598", "nanos":310000000}, ...] (Finam)
         out: Dict[str, float] = {}
         for item in balances:
-            if isinstance(item, dict):
-                cur = item.get("currency") or item.get("code") or "UNK"
-                try:
-                    amt = item.get("amount") or item.get("value") or next((float(x) for x in item.values() if isinstance(x, (int, float, str))), 0.0)
-                    out[str(cur)] = float(amt)
-                except Exception:
-                    continue
+            if not isinstance(item, dict):
+                continue
+            cur = item.get("currency") or item.get("currency_code") or item.get("code") or "UNK"
+            try:
+                if "units" in item or "nanos" in item:
+                    units = float(item.get("units", 0) or 0)
+                    nanos = float(item.get("nanos", 0) or 0)
+                    amt = units + nanos / 1_000_000_000.0
+                else:
+                    raw_val = item.get("amount") or item.get("value")
+                    if raw_val is None:
+                        # fallback: first numeric-ish value
+                        raw_val = next((x for x in item.values() if isinstance(x, (int, float, str))), 0.0)
+                    amt = float(raw_val)
+                out[str(cur)] = float(amt)
+            except Exception:
+                continue
         return out
     return {}
 
@@ -199,6 +211,25 @@ def get_portfolio_snapshot(router: ToolRouter, account_id: string) -> PortfolioS
         if qty == 0:
             continue
         last = _fetch_last_price(router, symbol)
+        # Fallback to current/average price from account payload if quote missing
+        if last <= 0:
+            try:
+                cp = rp.get("current_price") or rp.get("currentPrice") or rp.get("price")
+                if isinstance(cp, dict) and cp.get("value") is not None:
+                    last = float(cp.get("value"))
+                elif isinstance(cp, (int, float, str)):
+                    last = float(cp)
+            except Exception:
+                pass
+        if last <= 0:
+            try:
+                ap = rp.get("average_price") or rp.get("avgPrice")
+                if isinstance(ap, dict) and ap.get("value") is not None:
+                    last = float(ap.get("value"))
+                elif isinstance(ap, (int, float, str)):
+                    last = float(ap)
+            except Exception:
+                pass
         sector = _fetch_sector(router, symbol)
         country = _fetch_country(router, symbol)
         mv = qty * last
@@ -298,6 +329,7 @@ def plan_rebalance(
             "est_fee": est_fee,
         })
     return suggestions
+
 
 
 

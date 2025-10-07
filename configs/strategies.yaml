@@ -41,3 +41,48 @@ strategies:
     type: threshold
     params:
       ref: 0.0
+- name: SBER
+  symbol: SBER@MISX
+  timeframe: TIME_FRAME_W
+  start: последние 90 дней
+  end: сегодня
+  entry:
+    type: crossover
+    params:
+      fast: 13
+      slow: 26
+  exit:
+    type: threshold
+    params:
+      ref: 0.0
+- name: 'SBER@MISX_TIME_FRAME_D_Ecrossover-{''fast'': 13, ''slow'': 26}_Xthreshold-{''ref'':
+    0.0}'
+  symbol: SBER@MISX
+  timeframe: TIME_FRAME_D
+  start: последние 180 дней
+  end: сегодня
+  entry:
+    type: crossover
+    params:
+      fast: 13
+      slow: 26
+  exit:
+    type: threshold
+    params:
+      ref: 0.0
+- name: 'SBER@MISX_TIME_FRAME_D_Ecrossover-{''fast'': 14, ''slow'': 28}_Xthreshold-{''ref'':
+    -2.0}'
+  symbol: SBER@MISX
+  timeframe: TIME_FRAME_D
+  start: последние 180 дней
+  end: сегодня
+  entry:
+    type: crossover
+    params:
+      fast: 14
+      slow: 28
+  exit:
+    type: threshold
+    params:
+      ref: -2.0
+

@@ -168,6 +168,13 @@ def parse_date_range(natural_text: str) -> Optional[Tuple[str, str]]:
         start, end = _quarter_bounds(year, q)
         return start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    # half-year phrases
+    if "полгод" in text or "пол-года" in text or "за полгода" in text:
+        start_dt = now - timedelta(days=182)
+        s = datetime(year=start_dt.year, month=start_dt.month, day=start_dt.day, tzinfo=timezone.utc)
+        e = now
+        return s.strftime("%Y-%m-%dT%H:%M:%SZ"), e.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     # 'август 2025' like
     import re as _re
 

@@ -29,7 +29,11 @@ def init_tracer(service_name: str = "finam-assistant") -> None:
         # OpenTelemetry not installed; operate in no-op mode
         _initialized = True
         return
-    endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318")
+    # Exporter is opt-in: only enable if endpoint explicitly set
+    endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+    if not endpoint:
+        _initialized = True
+        return
     resource = Resource(attributes={"service.name": service_name})
     provider = TracerProvider(resource=resource)
     processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=endpoint + "/v1/traces"))
